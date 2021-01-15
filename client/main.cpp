@@ -3,32 +3,29 @@
 
 int main(int argc, char *argv[])
 {
-	Connection connection;
+	App game;
 
-	if (!connection.Init())
-	{
-		system("Pause");
-		return -1;
-	}
-	if (!connection.Connect())
-	{
-		system("pause");
-		return -1;
-	}
+	return game.Execution();
 
-	char buffer[BUFFERSIZE] = "1";
-	connection.MessageSend(buffer);
-	connection.MessageReceve(buffer);
-	cout << buffer << endl;
-	
+	//Connection connection;
 
+	//if (!connection.Init("192.168.0.106"))
+	//{
+	//	system("Pause");
+	//	return -1;
+	//}
+	//if (!connection.Connect())
+	//{
+	//	system("pause");
+	//	return -1;
+	//}
 
-	
-	
-	
-	
-	
-	connection.Close();
-	system("pause");
-	return 0;
+	//char buffer[BUFFERSIZE] = "1";
+	//connection.MessageSend(buffer);
+	//connection.MessageReceve(buffer);
+	//cout << buffer << endl;
+
+	//connection.Close();
+	//system("pause");
+	//return 0;
 }

@@ -25,7 +25,7 @@ public:
 	Connection();
 	~Connection() {}
 
-	bool Init();
+	bool Init(const char *address);
 	bool Connect();
 	void Close();
 

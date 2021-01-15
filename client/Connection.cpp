@@ -7,7 +7,7 @@ Connection::Connection()
 	server = NULL;
 }
 
-bool Connection::Init()
+bool Connection::Init(const char *address)
 {
 	if (WSAStartup(libversion, &wsadata))
 	{
@@ -21,7 +21,7 @@ bool Connection::Init()
 		return false;
 	}
 
-	serveraddr.sin_addr.S_un.S_addr = inet_addr("192.168.0.106");
+	serveraddr.sin_addr.S_un.S_addr = inet_addr(address);
 	serveraddr.sin_port = htons(1701);
 	serveraddr.sin_family = AF_INET;
 
