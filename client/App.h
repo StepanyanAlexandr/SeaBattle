@@ -2,7 +2,6 @@
 #include <SDL.h>
 #include "Connection.h"
 #include "Field.h"
-//#include "Ship.h"
 
 class App
 {
@@ -13,16 +12,30 @@ private:
 	Connection connection;
 
 	Sprite *background;
+	Sprite *exitbutton;
+	
+	Ship *battleship;
+	Ship *cruiser;
+	Ship *submarine;
+	Ship *boat;
+	Ship *dragableship;
 
 	Field *playerfield;
 	Field *enemyfield;
 
+	int battleshipnum;
+	int cruisernum;
+	int submarinenum;
+	int boatnum;
+	
+	bool drag;
 	bool running;
 public:
 	App();
 	~App();
 
-	void Init();
+	void Initialization();
+	void MemoryAllocation();
 	void Close();
 	void Rendering();
 

@@ -1,18 +1,15 @@
 #pragma once
-#include "Sprite.h"
 #include "Ship.h"
-#include <iostream>
-using namespace std;
 
 #define SIZE (10)
 
 typedef enum CELLTYPE
 {
-	EMPTY = 0,
-	SHIP,
+	DESTROY = 0,
 	MISS,
 	HIT,
-	DESTROY
+	SHIP,
+	EMPTY,
 }CELLTYPE;
 
 class Field
@@ -20,58 +17,32 @@ class Field
 private:
 	SDL_Renderer *render;
 
-	Sprite* mesh;
-	CELLTYPE **field;
-	Ship** ships;
-
+	Sprite *mesh;		// mesh - хранит спрайт сетки поля
+	Sprite *axis;		// axis - хранит спрайт координат клеток
+	Sprite tockens[3];	// здесь хранятся спрайты для клетки поля
+	CELLTYPE **field;	
+	
+	Ship **ships;
 	int shipcount;
 
 public:
-	Field(SDL_Renderer *rend, const char* path);
+	Field(SDL_Renderer *rend);
 	~Field();
 
-	//void setCell(celltype type, int x, int y) { field[x][y] = type; }
-	Sprite& getSprite() { return *mesh; }
-	bool checkPlace(const int x, const int y) const;
-	void addShip(const SHIPTYPE type) { if (shipcount != SIZE) ships[shipcount++] = new Ship(type, render); }
+	void setCell(CELLTYPE type, int x, int y) { field[x][y] = type; }
+	
+	Sprite& getMesh() { return *mesh; }
+	Sprite& getAxis() { return *axis; }
+	Sprite& getTocken(const CELLTYPE celltype);
+	CELLTYPE getCell(const int i, const int j) { return field[i][j]; }
 	Ship& getShip(const int pos) { return *ships[pos]; }
 	int getShipCount() const { return shipcount; }
 
-	CELLTYPE& operator() (const int x, const int y) { return field[x][y]; }
+	bool checkPlace(const int x, const int y) const;
+	void addShip(const Ship& ship) { ships[shipcount] = new Ship(ship);	shipcount++; }
+
+	void CoordWindToField(int *windx, int *windy, int *fieldx, int *fieldy);
+	void CoordFieldToWind(int *windx, int *windy, int *fieldx, int *fieldy);
+
+	void Rendering();
 };
-
-Field::Field(SDL_Renderer *rend, const char* path) : render(rend), mesh(nullptr), field(nullptr), shipcount(0)
-{
-	mesh = new Sprite;
-	mesh->loadTexture(path, render);
-	mesh->setPosition(40, 40);
-	mesh->setDimension(342, 342);
-
-	field = new CELLTYPE*[10];
-	ships = new Ship*[10];
-	for (int i = 0; i < SIZE; i++)
-	{
-		field[i] = new CELLTYPE[10];
-		ships[i] = nullptr;
-		for (int j = 0; j < SIZE; j++)
-			field[i][j] = EMPTY;
-	}
-}
-
-Field::~Field()
-{
-	for (int i = 0; i < SIZE; i++)
-		delete[] field[i];
-	delete[] field;
-}
-
-bool Field::checkPlace(const int x, const int y) const
-{
-	if (field[x][y] == SHIP		|| field[x][y + 1] == SHIP	   || field[x][y - 1] == SHIP ||
-		field[x + 1][y] == SHIP || field[x + 1][y + 1] == SHIP || field[x + 1][y - 1] == SHIP ||
-		field[x - 1][y] == SHIP || field[x - 1][y + 1] == SHIP || field[x - 1][y - 1] == SHIP)
-	{
-		return false;
-	}
-	return true;
-}

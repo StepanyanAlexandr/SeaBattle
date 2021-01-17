@@ -10,36 +10,30 @@ typedef enum SHIPTYPE
 }SHIPTYPE;
 
 // пути к файлам со спрайтами кораблей в разных положениях
-const char shipassets[16][24] =
+const char shipassets[16][23] =
 {
-	"images\\Boat0.png\0",
-	"images\\Boat1.png\0",
-	"images\\Boat2.png\0",
-	"images\\Boat3.png\0",
+	"images\\Boat0.png",
+	"images\\Boat1.png",
+	"images\\Boat2.png",
+	"images\\Boat3.png",
 
-	"images\\Submarine0.png\0",
-	"images\\Submarine1.png\0",
-	"images\\Submarine2.png\0",
-	"images\\Submarine3.png\0",
+	"images\\Submarine0.png",
+	"images\\Submarine1.png",
+	"images\\Submarine2.png",
+	"images\\Submarine3.png",
 
-	"images\\Cruiser0.png\0",
-	"images\\Cruiser1.png\0",
-	"images\\Cruiser2.png\0",
-	"images\\Cruiser3.png\0",
+	"images\\Cruiser0.png",
+	"images\\Cruiser1.png",
+	"images\\Cruiser2.png",
+	"images\\Cruiser3.png",
 
-	"images\\Battleship0.png\0",
-	"images\\Battleship1.png\0",
-	"images\\Battleship2.png\0",
-	"images\\Battleship3.png\0"
+	"images\\Battleship0.png",
+	"images\\Battleship1.png",
+	"images\\Battleship2.png",
+	"images\\Battleship3.png"
 };
 
-int dimension[8][2] = 
-{ 
-	{32, 32},	{32, 32}, 
-	{63, 32},	{32, 63}, 
-	{94, 32},	{32, 94}, 
-	{125, 32},	{32, 125} 
-};
+extern int dimension[8][2];
 
 class Ship
 {
@@ -50,31 +44,15 @@ private:
 	SHIPTYPE type;
 	int direction;
 public:
+	Ship() : render(nullptr), sprite(nullptr) {}
 	Ship(const SHIPTYPE t, SDL_Renderer *rend);
+	Ship(const Ship& right) { *this = right; }
 	~Ship() { delete sprite; }
 
 	Sprite& getSprite() { return *sprite; }
 	SHIPTYPE getType() const { return type; }
 	
 	void rotation();
+
+	Ship& operator= (const Ship& right);
 };
-
-Ship::Ship(SHIPTYPE t, SDL_Renderer *rend) : sprite(nullptr), render(rend), direction(0), type(t)
-{
-	sprite = new Sprite();
-
-	sprite->loadTexture(shipassets[type * 4 + direction], render);
-	sprite->setDimension(dimension[type + direction % 2][0], dimension[type + direction % 2][1]);
-}
-
-// поворот корабля
-void Ship::rotation()
-{
-	if (direction != 3)
-		direction++;
-	else
-		direction == 0;
-
-	sprite->loadTexture(shipassets[type * 4 + direction], render);
-	sprite->setDimension(dimension[type + direction % 2][0], dimension[type + direction % 2][1]);
-}

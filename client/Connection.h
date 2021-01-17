@@ -21,12 +21,15 @@ private:
 	SOCKET server;
 	int serveraddrsize;
 
+	bool isconnect;
 public:
 	Connection();
 	~Connection() {}
 
-	bool Init(const char *address);
-	bool Connect();
+	bool IsConnect() { return isconnect; }
+
+	void Init(const char *address);
+	void Connect();
 	void Close();
 
 	void MessageSend(char *message) { send(server, message, BUFFERSIZE, 0); }
