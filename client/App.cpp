@@ -187,11 +187,13 @@ int App::Execution()
 				{
 					if (exitbutton->checkCursorHit(playerevent.button.x, playerevent.button.y))
 						running = false;
+					// конец перетаскивания корабля
 					else if (drag)
 					{
-						SDL_Rect *rect = dragableship->getSprite().getRect();
+						SDL_Rect *ship = dragableship->getSprite().getRect();
 
-						if (playerfield->getMesh().checkCursorHit(rect->x, rect->y) && playerfield->getMesh().checkCursorHit(rect->x + rect->w, rect->y + rect->h))
+						if (playerfield->getMesh().checkCursorHit(ship->x, ship->y) && playerfield->getMesh().checkCursorHit(ship->x + ship->w, ship->y + ship->h) &&
+							playerfield->checkPlace(*dragableship))
 						{
 							playerfield->addShip(*dragableship);
 							delete dragableship;
@@ -219,7 +221,7 @@ int App::Execution()
 			case SDL_MOUSEBUTTONDOWN:
 				if (playerevent.button.button == SDL_BUTTON_LEFT)
 				{
-					// часть реализации Drag'n'drop
+					// Начало перетаскивания корабля
 					if (playerfield->getShipCount() < SIZE)
 					{
 						if (battleship->getSprite().checkCursorHit(playerevent.button.x, playerevent.button.y) && battleshipnum < 1)
@@ -254,42 +256,43 @@ int App::Execution()
 							dragableship = new Ship();
 							*dragableship = *boat;
 						}
+					}
 
-						if (dragableship != nullptr)
-						{
-							SDL_Rect *rect = dragableship->getSprite().getRect();
-							dragableship->getSprite().setPosition(playerevent.motion.x - rect->w / 2, playerevent.motion.y - rect->h / 2);
-						}
+					if (playerfield->getMesh().checkCursorHit(playerevent.button.x, playerevent.button.y))
+					{
+						cout << playerevent.button.x << " " << playerevent.button.y << endl;
 					}
 				}
+				// поворот корабля при перетаскивании
 				else if (playerevent.button.button == SDL_BUTTON_RIGHT)
 				{
 					if (drag)
 					{
-						SDL_Rect *rect = dragableship->getSprite().getRect();
+						SDL_Rect *ship = dragableship->getSprite().getRect();
 						dragableship->rotation();
-						dragableship->getSprite().setPosition(playerevent.button.x - rect->w / 2, playerevent.button.y - rect->h / 2);
+						dragableship->getSprite().setPosition(playerevent.button.x - 15, playerevent.button.y - 15);
 					}
 				}
 				break;
 			case SDL_MOUSEMOTION:
+				// обработка перетаскивания корабля
 				if (drag)
 				{
-					SDL_Rect *rect = dragableship->getSprite().getRect();
+					SDL_Rect *ship = dragableship->getSprite().getRect();
 					SDL_Point mouse = {playerevent.motion.x , playerevent.motion.y };
 
-					if (playerfield->getMesh().checkCursorHit(mouse.x, mouse.y) && 
-						playerfield->getMesh().checkCursorHit(rect->x, rect->y) && 
-						playerfield->getMesh().checkCursorHit(rect->x + rect->w - 1, rect->y - rect->h - 1))
+					if (playerfield->getMesh().checkCursorHit(mouse.x, mouse.y) &&
+						playerfield->getMesh().checkCursorHit(ship->x, ship->y) && 
+						playerfield->getMesh().checkCursorHit(ship->x + ship->w, ship->y + ship->h))
 					{
-						int fx = 0, fy = 0, wx = mouse.x, wy = mouse.y;
-						playerfield->CoordWindToField(&wx, &wy, &fx, &fy);
-						playerfield->CoordFieldToWind(&wx, &wy, &fx, &fy);
-						dragableship->getSprite().setPosition(wx, wy);
+						int fx = 0, fy = 0;
+						playerfield->CoordWindToField(&mouse.x, &mouse.y, &fx, &fy);
+						playerfield->CoordFieldToWind(&mouse.x, &mouse.y, &fx, &fy);
+						dragableship->getSprite().setPosition(mouse.x, mouse.y);
 					}
 					else
 					{
-						dragableship->getSprite().setPosition(mouse.x - rect->w / 2, mouse.y - rect->h / 2);
+						dragableship->getSprite().setPosition(mouse.x - 15, mouse.y - 15);
 					}
 				}
 				break;

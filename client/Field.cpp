@@ -36,25 +36,88 @@ Sprite& Field::getTocken(const CELLTYPE celltype)
 	else if (celltype == DESTROY) return tockens[DESTROY];
 }
 
-bool Field::checkPlace(const int x, const int y) const
+bool Field::checkPlace(Ship& ship) const
 {
-	if (field[x][y] == SHIP || field[x][y + 1] == SHIP || field[x][y - 1] == SHIP ||
-		field[x + 1][y] == SHIP || field[x + 1][y + 1] == SHIP || field[x + 1][y - 1] == SHIP ||
-		field[x - 1][y] == SHIP || field[x - 1][y + 1] == SHIP || field[x - 1][y - 1] == SHIP)
+	int x = 0, y = 0;
+	SDL_Rect *rect = ship.getSprite().getRect();
+
+	if (ship.getDirection() == 0 || ship.getDirection() == 2)
 	{
-		return false;
+		int j = rect->y + 15;
+		for (int i = rect->x + 15; i < rect->x + rect->w; i += 31)
+		{
+			CoordWindToField(&i, &j, &x, &y);
+			if (field[x][y] == SHIP) { return false; }
+			if (y != 9 && field[x][y + 1] == SHIP) { return false; }
+			if (y != 0 && field[x][y - 1] == SHIP) { return false; }
+			if (x != 9 && field[x + 1][y] == SHIP) { return false; }
+			if (x != 0 && field[x - 1][y] == SHIP) { return false; }
+			if (x != 9 && y != 9 && field[x + 1][y + 1] == SHIP) { return false; }
+			if (x != 9 && y != 0 && field[x + 1][y - 1] == SHIP) { return false; }
+			if (x != 0 && y != 9 && field[x - 1][y + 1] == SHIP) { return false; }
+			if (x != 0 && y != 0 && field[x - 1][y - 1] == SHIP) { return false; }
+		}
+	}
+	else
+	{
+		int j = rect->x + 15;
+		for (int i = rect->y + 15; i < rect->y + rect->h; i += 31)
+		{
+			CoordWindToField(&j, &i, &x, &y);
+			if (field[x][y] == SHIP) { return false; }
+			if (y != 9 && field[x][y + 1] == SHIP) { return false; }
+			if (y != 0 && field[x][y - 1] == SHIP) { return false; }
+			if (x != 9 && field[x + 1][y] == SHIP) { return false; }
+			if (x != 0 && field[x - 1][y] == SHIP) { return false; }
+			if (x != 9 && y != 9 && field[x + 1][y + 1] == SHIP) { return false; }
+			if (x != 9 && y != 0 && field[x + 1][y - 1] == SHIP) { return false; }
+			if (x != 0 && y != 9 && field[x - 1][y + 1] == SHIP) { return false; }
+			if (x != 0 && y != 0 && field[x - 1][y - 1] == SHIP) { return false; }
+		}
 	}
 	return true;
 }
 
-void Field::CoordWindToField(int *windx, int *windy, int *fieldx, int *fieldy)
+void Field::addShip(Ship& ship)
+{ 
+	int x = 0, y = 0;
+	SDL_Rect *rect = ship.getSprite().getRect();
+
+	if (ship.getDirection() == 0 || ship.getDirection() == 2)
+	{
+		int j = rect->y + 15;
+		for (int i = rect->x + 15; i < rect->x + rect->w; i += 31)
+		{
+			CoordWindToField(&i, &j, &x, &y);
+			field[x][y] = SHIP;
+		}
+	}
+	else
+	{
+		int j = rect->x + 15;
+		for (int i = rect->y + 15; i < rect->y + rect->h; i += 31)
+		{
+			CoordWindToField(&j, &i, &x, &y);
+			field[x][y] = SHIP;
+		}
+	}
+	ships[shipcount] = new Ship(ship);	
+	shipcount++; 
+}
+
+void Field::CoordWindToField(int *windx, int *windy, int *fieldx, int *fieldy) const
 {
 	SDL_Rect *start = mesh->getRect();
 	*fieldx = (*windx - start->x - 1) / 31;
 	*fieldy = (*windy - start->y - 1) / 31;
+
+	if (*fieldx > 9)
+		*fieldx = 9;
+	if (*fieldy > 9)
+		*fieldy = 9;
 }
 
-void Field::CoordFieldToWind(int *windx, int *windy, int *fieldx, int *fieldy)
+void Field::CoordFieldToWind(int *windx, int *windy, int *fieldx, int *fieldy) const
 {
 	SDL_Rect *start = mesh->getRect();
 	*windx = *fieldx * 31 + start->x + 1;

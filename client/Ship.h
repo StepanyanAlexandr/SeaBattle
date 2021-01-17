@@ -51,7 +51,8 @@ public:
 
 	Sprite& getSprite() { return *sprite; }
 	SHIPTYPE getType() const { return type; }
-	
+	int getDirection() const { return direction; }
+
 	void rotation();
 
 	Ship& operator= (const Ship& right);

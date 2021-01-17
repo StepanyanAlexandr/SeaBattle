@@ -38,11 +38,11 @@ public:
 	Ship& getShip(const int pos) { return *ships[pos]; }
 	int getShipCount() const { return shipcount; }
 
-	bool checkPlace(const int x, const int y) const;
-	void addShip(const Ship& ship) { ships[shipcount] = new Ship(ship);	shipcount++; }
+	bool checkPlace(Ship& ship) const;
+	void addShip(Ship& ship);
 
-	void CoordWindToField(int *windx, int *windy, int *fieldx, int *fieldy);
-	void CoordFieldToWind(int *windx, int *windy, int *fieldx, int *fieldy);
+	void CoordWindToField(int *windx, int *windy, int *fieldx, int *fieldy) const;
+	void CoordFieldToWind(int *windx, int *windy, int *fieldx, int *fieldy) const;
 
 	void Rendering();
 };
