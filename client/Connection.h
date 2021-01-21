@@ -11,6 +11,8 @@ using namespace std;
 
 #define BUFFERSIZE 256
 
+#define SERVERADDRESS "192.168.0.106"
+
 class Connection
 {
 private:
@@ -19,19 +21,23 @@ private:
 
 	SOCKADDR_IN serveraddr;
 	SOCKET server;
+	
 	int serveraddrsize;
-
 	bool isconnect;
+
+	string lastinmsg;
 public:
 	Connection();
 	~Connection() {}
 
-	bool IsConnect() { return isconnect; }
+	bool isConnect() { return isconnect; }
 
-	void Init(const char *address);
+	void Init();
 	void Connect();
 	void Close();
 
-	void MessageSend(char *message) { send(server, message, BUFFERSIZE, 0); }
-	void MessageReceve(char *message) { recv(server, message, BUFFERSIZE, 0); }
+	void MessageSend(string &message) { send(server, message.c_str(), BUFFERSIZE, 0); }
+	void MessageReceve();
+
+	string getLastInputMessage() { return lastinmsg; }
 };

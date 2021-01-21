@@ -29,11 +29,92 @@ Field::~Field()
 	delete axis;
 }
 
-Sprite& Field::getTocken(const CELLTYPE celltype)
+void Field::destroyShip(const int x, const int y)
 {
-	if (celltype == MISS) return tockens[MISS];
-	else if (celltype == HIT) return tockens[HIT];
-	else if (celltype == DESTROY) return tockens[DESTROY];
+	field[x][y] = HIT;
+
+	if ((x == 0 || field[x - 1][y] == MISS || field[x - 1][y] == EMPTY) &&
+		(x == SIZE - 1 || field[x + 1][y] == MISS || field[x + 1][y] == EMPTY) &&
+		(y == 0 || field[x][y - 1] == MISS || field[x][y - 1] == EMPTY) &&
+		(y == SIZE - 1 || field[x][y + 1] == MISS || field[x][y + 1] == EMPTY))
+	{
+		setMiss(x - 1, y);
+		setMiss(x + 1, y);
+		setMiss(x, y - 1);
+		setMiss(x, y + 1);
+		setMiss(x - 1, y - 1);
+		setMiss(x - 1, y + 1);
+		setMiss(x + 1, y - 1);
+		setMiss(x + 1, y + 1);
+	}
+	else
+	{
+		int curx = x, cury = y, prevx = x, prevy = y;
+		while (true)
+		{
+			bool flag = true;
+
+			if (curx != 0 && curx - 1 != prevx && field[curx - 1][cury] == HIT)
+			{
+				prevx = curx;
+				curx--;
+				flag = false;
+			}
+			else if (curx != SIZE - 1 && curx + 1 != prevx && field[curx + 1][cury] == HIT)
+			{
+				prevx = curx;
+				curx++;
+				flag = false;
+			}
+			else if (cury != 0 && cury - 1 != prevy && field[curx][cury - 1] == HIT)
+			{
+				prevy = cury;
+				cury--;
+				flag = false;
+			}
+			else if (cury != SIZE - 1 && cury + 1 != prevy && field[curx][cury + 1] == HIT)
+			{
+				prevy = cury;
+				cury++;
+				flag = false;
+			}
+			if (flag)
+				break;
+		}
+
+		int step = 0;
+		if (curx != prevx)
+		{
+			step = prevx - curx;
+			for (int i = curx; i >= 0 && i < SIZE && field[i][cury] != MISS && field[i][cury] != EMPTY; i += step)
+			{
+				setMiss(i - 1, cury);
+				setMiss(i + 1, cury);
+				setMiss(i, cury - 1);
+				setMiss(i, cury + 1);
+				setMiss(i - 1, cury - 1);
+				setMiss(i - 1, cury + 1);
+				setMiss(i + 1, cury - 1);
+				setMiss(i + 1, cury + 1);
+			}	
+		}
+		else if (cury != prevy)
+		{
+			step = prevy - cury;
+			for (int i = cury; i >= 0 && i < SIZE && field[curx][i] != MISS && field[curx][i] != EMPTY; i += step)
+			{
+				setHit(curx, i);
+				setMiss(curx - 1, i);
+				setMiss(curx + 1, i);
+				setMiss(curx, i - 1);
+				setMiss(curx, i + 1);
+				setMiss(curx - 1, i - 1);
+				setMiss(curx - 1, i + 1);
+				setMiss(curx + 1, i - 1);
+				setMiss(curx + 1, i + 1);
+			}		
+		}
+	}
 }
 
 bool Field::checkPlace(Ship& ship) const
@@ -76,6 +157,13 @@ bool Field::checkPlace(Ship& ship) const
 		}
 	}
 	return true;
+}
+
+bool Field::checkCell(const int x, const int y) const
+{
+	if (field[x][y] == SHIP || field[x][y] == EMPTY)
+		return true;
+	return false;
 }
 
 void Field::addShip(Ship& ship)
@@ -146,4 +234,15 @@ void Field::Rendering()
 			}
 		}
 	}
+}
+
+string Field::getShipsPlacement()
+{
+	string placement = "";
+	for (int i = 0; i < SIZE; i++)
+		for (int j = 0; j < SIZE; j++)
+			if (field[i][j] == EMPTY) placement += '0';
+			else placement += '1';
+	placement += ':';
+	return placement;
 }

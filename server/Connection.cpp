@@ -6,15 +6,14 @@ Connection::Connection()
 {
 	libversion = MAKEWORD(2, 2);
 	inaddrsize = sizeof(inaddr);
+	connection = NULL;
+	isconnect = false;
 }
 
-bool Connection::Init()
+void Connection::Init()
 {
 	if (WSAStartup(libversion, &wsadata))
-	{
-		cerr << "Error: Could not initialize winsock." << endl;
-		return false;
-	}
+		throw "Could not initialize winsock.";
 	
 	inaddr.sin_addr.S_un.S_addr = inet_addr("192.168.0.106");
 	inaddr.sin_port = htons(1701);
@@ -23,39 +22,25 @@ bool Connection::Init()
 	if (listener == NULL)
 	{
 		if ((listener = socket(AF_INET, SOCK_STREAM, NULL)) == INVALID_SOCKET)
-		{
-			cerr << "Error: " << WSAGetLastError() << " - Could not create a listener socket." << endl;
-			return false;
-		}
+			throw "Could not create a listener socket.";
 		if (bind(listener, (SOCKADDR*)&inaddr, inaddrsize) == SOCKET_ERROR)
-		{
-			cout << "Error: " << WSAGetLastError() << " - Could not bind listener" << endl;
-			return false;
-		}
+			throw "Could not bind listener.";
 		if (listen(listener, 1) == SOCKET_ERROR)
-		{
-			cout << "Error: " << WSAGetLastError() << " - Could not start listening" << endl;
-			return false;
-		}
+			throw "Could not start listening.";
 	}
-
-	return true;
 }
 
-bool Connection::Connect()
+void Connection::Connect()
 {
 	if ((connection = accept(listener, (SOCKADDR*)&inaddr, &inaddrsize)) == 0)
-	{
-		cout << "Error: " << WSAGetLastError() << " - Could not connected to server" << endl;
-		return false;
-	}
-
-	return true;
+		isconnect = false;
+	else
+		isconnect = true;
 }
 
 void Connection::Close()
 {
-	closesocket(listener);
-	closesocket(connection);
+	if (listener != NULL) closesocket(listener);
+	if (connection != NULL) closesocket(connection);
 	WSACleanup();
 }

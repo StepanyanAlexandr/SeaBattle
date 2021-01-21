@@ -3,6 +3,13 @@
 #include "Connection.h"
 #include "Field.h"
 
+typedef enum GAMESTAGE
+{
+	PLACINGSHIPS = 0,
+	GAME,
+	ENDGAME
+}GAMESTAGE;
+
 class App
 {
 private:
@@ -13,6 +20,7 @@ private:
 
 	Sprite *background;
 	Sprite *exitbutton;
+	Sprite *playbutton;
 	
 	Ship *battleship;
 	Ship *cruiser;
@@ -30,6 +38,10 @@ private:
 	
 	bool drag;
 	bool running;
+	bool turn;
+	bool iswin;
+
+	GAMESTAGE stage;
 public:
 	App();
 	~App();

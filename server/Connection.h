@@ -21,14 +21,17 @@ private:
 
 	SOCKADDR_IN inaddr;
 	SOCKET connection;
+	
 	int inaddrsize;
-
+	bool isconnect;
 public:
 	Connection();
 	~Connection() {}
 
-	bool Init();
-	bool Connect();
+	bool isConnect() { return isconnect; }
+
+	void Init();
+	void Connect();
 	void Close();
 
 	void MessageSend(char *message) { send(connection, message, BUFFERSIZE, 0); }
