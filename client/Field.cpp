@@ -4,6 +4,8 @@ Field::Field(SDL_Renderer *rend) : render(rend), mesh(nullptr), axis(nullptr), f
 {
 	mesh = new Sprite();
 	axis = new Sprite();
+	miss = new Sprite();
+	hit = new Sprite();
 
 	field = new CELLTYPE*[SIZE];
 	ships = new Ship*[SIZE];
@@ -20,13 +22,36 @@ Field::~Field()
 {
 	for (int i = 0; i < SIZE; i++)
 	{
-		delete ships[i];
+		if (ships[i] != nullptr) delete ships[i];
 		delete[] field[i];
 	}
 	delete[] ships;
 	delete[] field;
 	delete mesh;
 	delete axis;
+	delete miss;
+	delete hit;
+}
+
+void Field::LoadTockens()
+{
+	miss->loadTexture("images\\Miss.png", render);
+	miss->setDimension(30, 30);
+
+	hit->loadTexture("images\\Hit.png", render);
+	hit->setDimension(30, 30);
+}
+
+void Field::setHit(const int x, const int y) 
+{ 
+	if (x >= 0 && x < SIZE && y >= 0 && y < SIZE) 
+		field[x][y] = HIT; 
+}
+
+void Field::setMiss(const int x, const int y) 
+{ 
+	if (x >= 0 && x < SIZE && y >= 0 && y < SIZE && field[x][y] == EMPTY) 
+		field[x][y] = MISS; 
 }
 
 void Field::destroyShip(const int x, const int y)
@@ -103,7 +128,6 @@ void Field::destroyShip(const int x, const int y)
 			step = prevy - cury;
 			for (int i = cury; i >= 0 && i < SIZE && field[curx][i] != MISS && field[curx][i] != EMPTY; i += step)
 			{
-				setHit(curx, i);
 				setMiss(curx - 1, i);
 				setMiss(curx + 1, i);
 				setMiss(curx, i - 1);
@@ -220,17 +244,22 @@ void Field::Rendering()
 	for (int i = 0; i < shipcount; i++)
 		SDL_RenderCopy(render, ships[i]->getSprite().getTexture(), NULL, ships[i]->getSprite().getRect());
 
+	int x, y;
 	for (int i = 0; i < SIZE; i++)
 	{
 		for (int j = 0; j < SIZE; j++)
 		{
-			SDL_Rect rect;
-			if (field[i][j] != SHIP && field[i][j] != EMPTY)
+			if (field[i][j] == MISS)
 			{
-				rect.w = 30;
-				rect.h = 30;
-				CoordFieldToWind(&rect.x, &rect.y, &i, &j);
-				SDL_RenderCopy(render, tockens[field[i][j]].getTexture(), NULL, &rect);
+				CoordFieldToWind(&x, &y, &i, &j);
+				miss->setPosition(x, y);
+				SDL_RenderCopy(render, miss->getTexture(), NULL, miss->getRect());
+			}
+			else if (field[i][j] == HIT)
+			{
+				CoordFieldToWind(&x, &y, &i, &j);
+				hit->setPosition(x, y);
+				SDL_RenderCopy(render, hit->getTexture(), NULL, hit->getRect());
 			}
 		}
 	}

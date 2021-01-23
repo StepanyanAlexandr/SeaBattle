@@ -3,13 +3,14 @@
 #pragma warning(disable : 4996)
 
 #include <iostream>
+#include <fstream>
+#include <string>
 #include <winsock2.h>
 using namespace std;
 
-#define WSASTARTUPFAILURE (-2)
-#define CONNECTIONSUCCESSFULL (1)
-
 #define BUFFERSIZE 256
+
+extern ofstream logfile;
 
 class Connection
 {
@@ -23,17 +24,18 @@ private:
 	SOCKET connection;
 	
 	int inaddrsize;
-	bool isconnect;
+
+	string lastinmsg;
 public:
 	Connection();
 	~Connection() {}
-
-	bool isConnect() { return isconnect; }
 
 	void Init();
 	void Connect();
 	void Close();
 
-	void MessageSend(char *message) { send(connection, message, BUFFERSIZE, 0); }
-	void MessageReceve(char *message) { recv(connection, message, BUFFERSIZE, 0); }
+	void MessageSend(string &message);
+	void MessageReceve();
+
+	string getLastInputMessage() { return lastinmsg; }
 };

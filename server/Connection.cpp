@@ -1,13 +1,13 @@
 #include "Connection.h"
 
 SOCKET Connection::listener = NULL;
+ofstream logfile;
 
 Connection::Connection()
 {
 	libversion = MAKEWORD(2, 2);
 	inaddrsize = sizeof(inaddr);
 	connection = NULL;
-	isconnect = false;
 }
 
 void Connection::Init()
@@ -33,9 +33,7 @@ void Connection::Init()
 void Connection::Connect()
 {
 	if ((connection = accept(listener, (SOCKADDR*)&inaddr, &inaddrsize)) == 0)
-		isconnect = false;
-	else
-		isconnect = true;
+		throw "Failed to connect user.";
 }
 
 void Connection::Close()
@@ -43,4 +41,18 @@ void Connection::Close()
 	if (listener != NULL) closesocket(listener);
 	if (connection != NULL) closesocket(connection);
 	WSACleanup();
+}
+
+void Connection::MessageSend(string &message)
+{
+	send(connection, message.c_str(), BUFFERSIZE, 0);
+	logfile << "    <-   " << message << endl;
+}
+
+void Connection::MessageReceve()
+{ 
+	char buffer[BUFFERSIZE];
+	recv(connection, buffer, BUFFERSIZE, 0);
+	lastinmsg = buffer;
+	logfile << "    ->   " << lastinmsg << endl;
 }

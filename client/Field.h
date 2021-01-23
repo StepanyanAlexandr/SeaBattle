@@ -20,7 +20,6 @@ private:
 	Sprite *axis;		// axis - хранит спрайт координат клеток
 	Sprite *miss;
 	Sprite *hit;
-	Sprite tockens[3];	// здесь хранятся спрайты для клетки поля
 	CELLTYPE **field;	
 	
 	Ship **ships;
@@ -30,8 +29,10 @@ public:
 	Field(SDL_Renderer *rend);
 	~Field();
 
-	void setMiss(const int x, const int y) { if (x >= 0 && x < SIZE && y >= 0 && y < SIZE && field[x][y] == EMPTY) field[x][y] = MISS; }
-	void setHit(const int x, const int y) { if (x >= 0 && x < SIZE && y >= 0 && y < SIZE && field[x][y] == SHIP) field[x][y] = HIT; }
+	void LoadTockens();
+
+	void setMiss(const int x, const int y);
+	void setHit(const int x, const int y);
 	void destroyShip(const int x, const int y);
 	
 	Sprite& getMesh() { return *mesh; }
