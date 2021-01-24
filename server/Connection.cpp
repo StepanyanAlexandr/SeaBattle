@@ -8,6 +8,7 @@ Connection::Connection()
 	libversion = MAKEWORD(2, 2);
 	inaddrsize = sizeof(inaddr);
 	connection = NULL;
+	isconnect = false;
 }
 
 void Connection::Init()
@@ -32,15 +33,24 @@ void Connection::Init()
 
 void Connection::Connect()
 {
-	if ((connection = accept(listener, (SOCKADDR*)&inaddr, &inaddrsize)) == 0)
+	if ((connection = accept(listener, (SOCKADDR*)&inaddr, &inaddrsize)) == INVALID_SOCKET)
 		throw "Failed to connect user.";
+	else
+	{
+		isconnect = true;
+
+		unsigned long param = 1;
+		if (ioctlsocket(connection, FIONBIO, &param) == SOCKET_ERROR)
+			throw "Can't create non-bloking socket";
+	}
 }
 
 void Connection::Close()
 {
-	if (listener != NULL) closesocket(listener);
-	if (connection != NULL) closesocket(connection);
+	if (listener != NULL) { closesocket(listener); listener = NULL; }
+	if (connection != NULL) { closesocket(connection); connection = NULL; }
 	WSACleanup();
+	isconnect = false;
 }
 
 void Connection::MessageSend(string &message)
@@ -49,10 +59,14 @@ void Connection::MessageSend(string &message)
 	logfile << "    <-   " << message << endl;
 }
 
-void Connection::MessageReceve()
+int Connection::MessageReceve()
 { 
 	char buffer[BUFFERSIZE];
-	recv(connection, buffer, BUFFERSIZE, 0);
-	lastinmsg = buffer;
-	logfile << "    ->   " << lastinmsg << endl;
+	int ret = recv(connection, buffer, BUFFERSIZE, 0);
+	if (ret != NOMESSAGE)
+	{
+		lastinmsg = buffer;
+		logfile << "    ->   " << lastinmsg << endl;
+	}
+	return ret;
 }

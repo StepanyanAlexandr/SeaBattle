@@ -40,11 +40,9 @@ int main(int argc, char *argv[])
 		}
 		logfile << "First connection succesful" << endl;
 		// принимаем сообщение со занчениями клеток поля первого игрока
-		connections[FIRSTPLAYER].MessageReceve();
+		while (connections[FIRSTPLAYER].MessageReceve() == NOMESSAGE);
 		message[FIRSTPLAYER] = connections[FIRSTPLAYER].getLastInputMessage();
 		fields[FIRSTPLAYER] = new Field(message[FIRSTPLAYER]);
-		message[FIRSTPLAYER] = "yourturn:";
-		connections[FIRSTPLAYER].MessageSend(message[FIRSTPLAYER]);
 
 		try { connections[SECONDPLAYER].Connect(); }
 		catch (const char *errormessage)
@@ -55,37 +53,33 @@ int main(int argc, char *argv[])
 		}
 		logfile << "Second connection succesful" << endl;
 		// принимаем сообщение со занчениями клеток поля второго игрока
-		connections[SECONDPLAYER].MessageReceve();
+		while (connections[SECONDPLAYER].MessageReceve() == NOMESSAGE);
 		message[SECONDPLAYER] = connections[SECONDPLAYER].getLastInputMessage();
 		fields[SECONDPLAYER] = new Field(message[SECONDPLAYER]);
+
+
+		message[FIRSTPLAYER] = "yourturn:";
 		message[SECONDPLAYER] = "enemyturn:";
+		connections[FIRSTPLAYER].MessageSend(message[FIRSTPLAYER]);
 		connections[SECONDPLAYER].MessageSend(message[SECONDPLAYER]);
 
-		bool running = true;
-		while (running)
+		while (connections[FIRSTPLAYER].isConnect() || connections[SECONDPLAYER].isConnect())
 		{
-			connections[FIRSTPLAYER].MessageReceve();
-			connections[SECONDPLAYER].MessageReceve();
-			message[FIRSTPLAYER] = connections[FIRSTPLAYER].getLastInputMessage();
-			message[SECONDPLAYER] = connections[SECONDPLAYER].getLastInputMessage();
-
-			if (turn == FIRSTPLAYER)
+			if (connections[FIRSTPLAYER].isConnect() && connections[FIRSTPLAYER].MessageReceve() != NOMESSAGE)
 			{
-				logfile << "FIRSTPLAYER turn:" << endl;
+				message[FIRSTPLAYER] = connections[FIRSTPLAYER].getLastInputMessage();
 
 				if (message[FIRSTPLAYER] == "disconnect:")
 				{
-					if (message[SECONDPLAYER] == "ping:")
+					connections[FIRSTPLAYER].Close();
+					if (connections[SECONDPLAYER].isConnect())
 					{
 						message[SECONDPLAYER] = "win:";
 						connections[SECONDPLAYER].MessageSend(message[SECONDPLAYER]);
 					}
-					running = false;
 				}
 				else if (message[FIRSTPLAYER].find("hit:") != string::npos)
 				{
-					string msg = message[SECONDPLAYER];
-
 					int x = (message[FIRSTPLAYER][4] - '0'), y = (message[FIRSTPLAYER][6] - '0');
 					CELLTYPE type = fields[SECONDPLAYER]->hitType(x, y);
 
@@ -126,77 +120,37 @@ int main(int argc, char *argv[])
 						fields[SECONDPLAYER]->destroyShip(x, y);
 					}
 
-					if (msg == "disconnect:")
-					{
-						connections[FIRSTPLAYER].MessageSend(message[FIRSTPLAYER]);
-						message[FIRSTPLAYER] = "win:";
-						connections[FIRSTPLAYER].MessageSend(message[FIRSTPLAYER]);
+					connections[FIRSTPLAYER].MessageSend(message[FIRSTPLAYER]);
+					connections[SECONDPLAYER].MessageSend(message[SECONDPLAYER]);
 
-						running = false;
-					}
-					else if (msg == "ping:")
-					{
-						connections[FIRSTPLAYER].MessageSend(message[FIRSTPLAYER]);
-						connections[SECONDPLAYER].MessageSend(message[SECONDPLAYER]);
-
-						if (fields[SECONDPLAYER]->isWin())
-						{
-							message[FIRSTPLAYER] = "win:";
-							message[SECONDPLAYER] = "lose:";
-
-							connections[FIRSTPLAYER].MessageSend(message[FIRSTPLAYER]);
-							connections[SECONDPLAYER].MessageSend(message[SECONDPLAYER]);
-
-							running = false;
-						}
-						else
-						{
-							message[FIRSTPLAYER] = "ping:";
-							message[SECONDPLAYER] = "ping:";
-
-							connections[FIRSTPLAYER].MessageSend(message[FIRSTPLAYER]);
-							connections[SECONDPLAYER].MessageSend(message[SECONDPLAYER]);
-
-							turn = SECONDPLAYER;
-						}
-					}
-				}
-				else if (message[FIRSTPLAYER] == "ping:")
-				{
-					if (message[SECONDPLAYER] == "disconnect:")
+					if (fields[SECONDPLAYER]->isWin())
 					{
 						message[FIRSTPLAYER] = "win:";
-						connections[FIRSTPLAYER].MessageSend(message[FIRSTPLAYER]);
-
-						running = false;
-					}
-					else if (message[SECONDPLAYER] == "ping:")
-					{
-						message[FIRSTPLAYER] = "ping:";
-						message[SECONDPLAYER] = "ping:";
+						message[SECONDPLAYER] = "lose:";
 
 						connections[FIRSTPLAYER].MessageSend(message[FIRSTPLAYER]);
 						connections[SECONDPLAYER].MessageSend(message[SECONDPLAYER]);
 					}
+
+					turn = SECONDPLAYER;
 				}
 			}
-			else
+
+			if (connections[SECONDPLAYER].isConnect() && connections[SECONDPLAYER].MessageReceve() != NOMESSAGE)
 			{
-				logfile << "SECONDPLAYER turn:" << endl;
+				message[SECONDPLAYER] = connections[SECONDPLAYER].getLastInputMessage();
 
 				if (message[SECONDPLAYER] == "disconnect:")
 				{
-					if (message[FIRSTPLAYER] == "ping:")
+					connections[SECONDPLAYER].Close();
+					if (connections[FIRSTPLAYER].isConnect())
 					{
 						message[FIRSTPLAYER] = "win:";
 						connections[FIRSTPLAYER].MessageSend(message[FIRSTPLAYER]);
 					}
-					running = false;
 				}
 				else if (message[SECONDPLAYER].find("hit:") != string::npos)
 				{
-					string msg = message[FIRSTPLAYER];
-
 					int x = (message[SECONDPLAYER][4] - '0'), y = (message[SECONDPLAYER][6] - '0');
 					CELLTYPE type = fields[FIRSTPLAYER]->hitType(x, y);
 
@@ -237,65 +191,22 @@ int main(int argc, char *argv[])
 						fields[FIRSTPLAYER]->destroyShip(x, y);
 					}
 
-					if (msg == "disconnect:")
-					{
-						connections[SECONDPLAYER].MessageSend(message[SECONDPLAYER]);
-						message[SECONDPLAYER] = "win:";
-						connections[SECONDPLAYER].MessageSend(message[SECONDPLAYER]);
+					connections[FIRSTPLAYER].MessageSend(message[FIRSTPLAYER]);
+					connections[SECONDPLAYER].MessageSend(message[SECONDPLAYER]);
 
-						running = false;
-					}
-					else if (msg == "ping:")
-					{
-						connections[SECONDPLAYER].MessageSend(message[SECONDPLAYER]);
-						connections[FIRSTPLAYER].MessageSend(message[FIRSTPLAYER]);
-
-						if (fields[FIRSTPLAYER]->isWin())
-						{
-							message[SECONDPLAYER] = "win:";
-							message[FIRSTPLAYER] = "lose:";
-
-							connections[SECONDPLAYER].MessageSend(message[SECONDPLAYER]);
-							connections[FIRSTPLAYER].MessageSend(message[FIRSTPLAYER]);
-
-							running = false;
-						}
-						else
-						{
-							message[SECONDPLAYER] = "ping:";
-							message[FIRSTPLAYER] = "ping:";
-
-							connections[SECONDPLAYER].MessageSend(message[SECONDPLAYER]);
-							connections[FIRSTPLAYER].MessageSend(message[FIRSTPLAYER]);
-
-							turn = FIRSTPLAYER;
-						}
-					}
-				}
-				else if (message[SECONDPLAYER] == "ping:")
-				{
-					if (message[FIRSTPLAYER] == "disconnect:")
+					if (fields[FIRSTPLAYER]->isWin())
 					{
 						message[SECONDPLAYER] = "win:";
-						connections[SECONDPLAYER].MessageSend(message[SECONDPLAYER]);
+						message[FIRSTPLAYER] = "lose:";
 
-						running = false;
-					}
-					else if (message[FIRSTPLAYER] == "ping:")
-					{
-						message[FIRSTPLAYER] = "ping:";
-						message[SECONDPLAYER] = "ping:";
-
-						connections[SECONDPLAYER].MessageSend(message[SECONDPLAYER]);
 						connections[FIRSTPLAYER].MessageSend(message[FIRSTPLAYER]);
+						connections[SECONDPLAYER].MessageSend(message[SECONDPLAYER]);
 					}
+
+					turn = FIRSTPLAYER;
 				}
 			}
-			logfile << endl;
 		}
-
-		connections[0].Close();
-		connections[1].Close();
 
 		delete fields[FIRSTPLAYER];
 		delete fields[SECONDPLAYER];

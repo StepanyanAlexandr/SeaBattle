@@ -8,6 +8,7 @@
 #include <winsock2.h>
 using namespace std;
 
+#define NOMESSAGE (-1)
 #define BUFFERSIZE 256
 
 extern ofstream logfile;
@@ -24,18 +25,22 @@ private:
 	SOCKET connection;
 	
 	int inaddrsize;
+	bool isconnect;
 
 	string lastinmsg;
+
 public:
 	Connection();
 	~Connection() {}
+
+	bool isConnect() { return isconnect; }
 
 	void Init();
 	void Connect();
 	void Close();
 
 	void MessageSend(string &message);
-	void MessageReceve();
+	int MessageReceve();
 
 	string getLastInputMessage() { return lastinmsg; }
 };

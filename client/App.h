@@ -21,6 +21,10 @@ private:
 	Sprite *background;
 	Sprite *exitbutton;
 	Sprite *playbutton;
+
+	Sprite *playerturn;
+	Sprite *enemyturn;
+	Sprite *waiting;
 	
 	Ship *battleship;
 	Ship *cruiser;
@@ -40,6 +44,7 @@ private:
 	bool running;
 	bool turn;
 	bool iswin;
+	bool waitingenemy;
 
 	GAMESTAGE stage;
 public:

@@ -9,6 +9,10 @@ App::App()
 	exitbutton = nullptr;
 	playbutton = nullptr;
 
+	playerturn = nullptr;
+	enemyturn = nullptr;
+	waiting = nullptr;
+
 	battleship = nullptr;
 	cruiser = nullptr;
 	submarine = nullptr;
@@ -28,6 +32,9 @@ App::~App()
 	if (background != nullptr) delete background;
 	if (exitbutton != nullptr) delete exitbutton;
 	if (playbutton != nullptr) delete playbutton;
+	if (playerturn != nullptr) delete playerturn;
+	if (enemyturn != nullptr) delete enemyturn;
+	if (waiting != nullptr) delete waiting;
 	if (playerfield != nullptr) delete playerfield;
 	if (enemyfield != nullptr) delete enemyfield;
 	if (battleship != nullptr) delete battleship;
@@ -74,8 +81,8 @@ void App::MemoryAllocation()
 		turn = false;
 		iswin = false;
 
-		if (background != nullptr) delete background;
-		if (exitbutton != nullptr) delete exitbutton;
+		if (background != nullptr) { delete background; background = nullptr; }
+		if (exitbutton != nullptr) { delete exitbutton; exitbutton = nullptr; }
 
 		if ((background = new Sprite()) == nullptr)
 			throw "Can't allocate memory for background sprite";
@@ -144,19 +151,42 @@ void App::MemoryAllocation()
 	}
 	else if (stage == GAME)
 	{
+		waitingenemy = true;
+
 		if (playbutton != nullptr) { delete playbutton; playbutton = nullptr; }
 		if (battleship != nullptr) { delete battleship; battleship = nullptr; }
 		if (cruiser != nullptr) { delete cruiser; cruiser = nullptr; }
 		if (submarine != nullptr) { delete submarine; submarine = nullptr; }
 		if (boat != nullptr) { delete boat; boat = nullptr; }
 		if (dragableship != nullptr) { delete dragableship; dragableship = nullptr; }
+
+		if ((playerturn = new Sprite()) == nullptr)
+			throw "Can't allocate memory for message sprite";
+		playerturn->loadTexture("images\\PlayerTurn.png", mainrend);
+		playerturn->setPosition(560, 500);
+		playerturn->setDimension(230, 40);
+
+		if ((enemyturn = new Sprite()) == nullptr)
+			throw "Can't allocate memory for message sprite";
+		enemyturn->loadTexture("images\\EnemyTurn.png\0", mainrend);
+		enemyturn->setPosition(560, 500);
+		enemyturn->setDimension(230, 40);
+
+		if ((waiting = new Sprite()) == nullptr)
+			throw "Can't allocate memory for message sprite";
+		waiting->loadTexture("images\\WaitingEnemy.png\0", mainrend);
+		waiting->setPosition(560, 500);
+		waiting->setDimension(230, 40);
 	}
 	else if (stage == ENDGAME)
 	{
-		if (background != nullptr) delete background;
-		if (playerfield != nullptr) delete playerfield;
-		if (enemyfield != nullptr) delete enemyfield;
-		if (exitbutton != nullptr) delete exitbutton;
+		if (background != nullptr) { delete background; background = nullptr; }
+		if (playerturn != nullptr) { delete playerturn; playerturn = nullptr; }
+		if (enemyturn != nullptr) { delete enemyturn; enemyturn = nullptr; }
+		if (waiting != nullptr) { delete waiting; waiting = nullptr; }
+		if (playerfield != nullptr) { delete playerfield; playerfield = nullptr; }
+		if (enemyfield != nullptr) { delete enemyfield; enemyfield = nullptr; }
+		if (exitbutton != nullptr) { delete exitbutton; exitbutton = nullptr; }
 		
 		if ((background = new Sprite()) == nullptr)
 			throw "Can't allocate memory for background sprite";
@@ -205,6 +235,9 @@ void App::Rendering()
 	{
 		SDL_RenderCopy(mainrend, background->getTexture(), NULL, background->getRect());
 		SDL_RenderCopy(mainrend, exitbutton->getTexture(), NULL, exitbutton->getRect());
+		if (waitingenemy) SDL_RenderCopy(mainrend, waiting->getTexture(), NULL, waiting->getRect());
+		else if (turn) SDL_RenderCopy(mainrend, playerturn->getTexture(), NULL, playerturn->getRect());
+		else if (!turn) SDL_RenderCopy(mainrend, enemyturn->getTexture(), NULL, enemyturn->getRect());
 
 		playerfield->Rendering();
 		enemyfield->Rendering();
@@ -411,20 +444,14 @@ int App::Execution()
 			string message = playerfield->getShipsPlacement();
 			connection.MessageSend(message);
 
-			// принимаем ответ от сервера
-			// в нем содержится информация о том, чей сейчас ход
-			connection.MessageReceve();
-			message = connection.getLastInputMessage();
-			if (message == "yourturn:") turn = true;
-			else if (message == "enemyturn") turn = false;
-
 			SDL_Point hit = { -1, -1 };
 			isStageEnd = false;
+			turn = false;
 			// основной цикл второго этапа работы программы - игра по сети
 			while (running && stage == GAME)
 			{
-				hit = { -1, -1 };
-				message = "";
+				//hit = { -1, -1 };
+				//message = "";
 
 				// Цикл обработки пользовательских событий
 				SDL_Event playerevent;
@@ -456,23 +483,17 @@ int App::Execution()
 					}
 				}
 
-				// клиент должен отправить одно сообщение на сервер при каждом повторении цикла
-				//		если этот клиент завершает работу, то посылается сообщение disconnect: 
-				//		при этом ответ от сервера не ожидается
+				// клиент может отправить сообщение на сервер
+				//		- если этот клиент завершает работу, то посылается сообщение disconnect: 
+				//		- если этот клиент сделал выстрел на своем ходу, то посылается сообщение hit:pos_x:pos_y:
 				//
-				//		если этот клиент сделал выстрел на своем ходу, то посылается сообщение hit:pos_x:pos_y:
-				//		в этом случае от сервера ожидается цепочка из двух сообщений
-				//
-				//		если клиент не сделал никаких действий, либо сейчас не его ход, то сервер пингуется (ping:)
-				//		количество ответных сообщений зависит от информации из первого сообщения от сервера
+				// при каждом повторении цикла проверяется поступило ли сообщение от сервера и если поступило, то что в нем содержится
+				//		- если недавно этим игроком был сделан вытсрел, то может прийти enemy:hit_type:
+				//		- если недавно противником был сделан вытсрел, то может прийти player:hit_type:pos_x:pos_y:
+				//		- может прийти сообщение о победе - win: или сообщение о поражении - lose:
+				//		- может прийти сообщение, что сейчас ход игрока - yourturn: или ход противника - enemyturn:
 
-				if (!running)
-				{
-					// сообщаем серверу о том, что отключаемся
-					message = "disconnect:";
-					connection.MessageSend(message);
-				}
-				else if (turn && hit.x != -1 && hit.y != -1)
+				if (turn && hit.x != -1 && hit.y != -1)
 				{
 					// отправляем серверу сообщении о выстреле и координаты ячейки куда выстрелили
 					message = "hit:";
@@ -482,78 +503,57 @@ int App::Execution()
 					message += ':';
 					connection.MessageSend(message);
 
-					// получаем от сервера сообщение с информацией о попадании/промахе/уничтожении корабля
-					connection.MessageReceve();
-					message = connection.getLastInputMessage();
-					if (message[6] == 'M') enemyfield->setMiss(hit.x, hit.y);
-					else if (message[6] == 'H') enemyfield->setHit(hit.x, hit.y);
-					else if (message[6] == 'D') enemyfield->destroyShip(hit.x, hit.y);
+					turn = false;
+				}
 
-					// принимаем второе сообщение от сервера о победе или просто пинг
-					connection.MessageReceve();
+				if (connection.MessageReceve() != NOMESSAGE)
+				{
 					message = connection.getLastInputMessage();
-					if (message == "win:")
+
+					if (message.find("enemy:") != string::npos)
 					{
+						// получаем от сервера сообщение с информацией о своем ходе попадании/промахе/уничтожении корабля
+						if (message[6] == 'M') enemyfield->setMiss(hit.x, hit.y);
+						else if (message[6] == 'H') enemyfield->setHit(hit.x, hit.y);
+						else if (message[6] == 'D') enemyfield->destroyShip(hit.x, hit.y);
+
+						hit = { -1, -1 };
+					}
+					else if (message.find("player:") != string::npos)
+					{
+						// получаем от сервера сообщение с информацией о ходе противника попадании/промахе/уничтожении корабля
+						hit = { (message[9] - '0'), (message[11] - '0') };
+
+						if (message[7] == 'M') playerfield->setMiss(hit.x, hit.y);
+						else if (message[7] == 'H') playerfield->setHit(hit.x, hit.y);
+						else if (message[7] == 'D') playerfield->destroyShip(hit.x, hit.y);
+
+						hit = { -1, -1 };
+						turn = true;
+					}
+					else if (message == "win:")
+					{
+						// если сервер отправил win: значит мы победили
 						iswin = true;
 						isStageEnd = true;
 					}
-					else
-						turn = false;
-				}
-				else
-				{
-					// пингуем сервер
-					message = "ping:";
-					connection.MessageSend(message);
-
-					// получаем ответ от сервера
-					connection.MessageReceve();
-					message = connection.getLastInputMessage();
-
-					if (turn)
+					else if (message == "lose:")
 					{
-						// на пинг сервера во время хода этого клиента могут поступить следующие ответы
-						// сообщение может говорить о победе этого клиента
-						// либо там будет ответный пинг от сервера
-						if (message == "win:")
-						{
-							iswin = true;
-							isStageEnd = true;
-						}
+						// если сервер отправил lose: значит победил противник
+						iswin = false;
+						isStageEnd = true;
 					}
-					else
+					else if (message == "yourturn:")
 					{
-						// на пинг сервера во время хода противника могут поступить следующие ответы
-						// player:hit_info:pos_x:pos_y - противник сделал выстрел, в данном сообщении содержится информация о нем
-						// win: - противник вышел, этот клиент побеждает
-						// либо просто ответный пинг от сервера, если противник еще не сходил
-
-						if (message.find("player:") != string::npos)
-						{
-							int x = (message[9] - '0'), y = (message[11] - '0');
-							if (message[7] == 'M') playerfield->setMiss(x, y);
-							else if (message[7] == 'H') playerfield->setHit(x, y);
-							else if (message[7] == 'D') playerfield->destroyShip(x, y);
-
-							// если противник сделал выстрел и от сервера пришло сообщение об этом
-							// то сервер отправляет следом еще одно сообщение
-							// оно может содержать либо информацию о проигрыше этого клиента
-							// либо пинг клиента
-							connection.MessageReceve();
-							message = connection.getLastInputMessage();
-							if (message == "lose:")
-							{
-								iswin = false;
-								isStageEnd = true;
-							}
-							else
-								turn = true;
-						}
-						else if (message == "win:")
-						{
-							iswin = true;
-							isStageEnd = true;
-						}
+						// если сервер отправил yourturn: значит начался ход игрока
+						waitingenemy = false;
+						turn = true;
+					}
+					else if (message == "enemyturn:")
+					{
+						// если сервер отправил enemyturn: значит начался ход противника
+						waitingenemy = false;
+						turn = false;
 					}
 				}
 				// Отрисовывка графики на экран
@@ -562,7 +562,8 @@ int App::Execution()
 				if (isStageEnd)
 					stage = ENDGAME;
 			}
-
+			message = "disconnect:";
+			connection.MessageSend(message);
 			connection.Close();
 		}
 

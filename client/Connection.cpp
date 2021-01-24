@@ -25,18 +25,28 @@ void Connection::Connect()
 	if (connect(server, (SOCKADDR*)&serveraddr, serveraddrsize) == SOCKET_ERROR)
 		isconnect = false;
 	else
+	{
 		isconnect = true;
+
+		unsigned long param = 1;
+		if (ioctlsocket(server, FIONBIO, &param) == SOCKET_ERROR)
+			throw "Can't create non-bloking socket";
+	}
+
 }
 
 void Connection::Close()
 {
 	closesocket(server);
+	server = NULL;
 	WSACleanup();
+	isconnect = false;
 }
 
-void Connection::MessageReceve()
+int Connection::MessageReceve()
 {
 	char buffer[BUFFERSIZE];
-	recv(server, buffer, BUFFERSIZE, 0);
+	int ret = recv(server, buffer, BUFFERSIZE, 0);
 	lastinmsg = buffer;
+	return ret;
 }

@@ -6,9 +6,7 @@
 #include <winsock2.h>
 using namespace std;
 
-#define WSASTARTUPFAILURE (-2)
-#define CONNECTIONSUCCESSFULL (1)
-
+#define NOMESSAGE (-1)
 #define BUFFERSIZE 256
 
 #define SERVERADDRESS "192.168.0.106"
@@ -37,7 +35,7 @@ public:
 	void Close();
 
 	void MessageSend(string &message) { send(server, message.c_str(), BUFFERSIZE, 0); }
-	void MessageReceve();
+	int MessageReceve();
 
 	string getLastInputMessage() { return lastinmsg; }
 };
