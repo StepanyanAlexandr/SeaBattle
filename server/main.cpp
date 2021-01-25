@@ -1,4 +1,3 @@
-#pragma once
 #include "Field.h"
 
 int main(int argc, char *argv[])

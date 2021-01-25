@@ -8,9 +8,6 @@ using namespace std;
 #include <SDL.h>
 #include <SDL_image.h>
 
-#define _CANT_LOAD_IMAGE_		(-1)
-#define _CANT_CREATE_TEXTURE_	(-2)
-
 // класс используемый для загрузки и хранения текстуры
 class Sprite
 {

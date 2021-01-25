@@ -604,7 +604,5 @@ int App::Execution()
 		}
 	}
 
-
-
 	return 0;
 }
